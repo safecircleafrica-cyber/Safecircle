@@ -121,10 +121,7 @@ app.post('/create-checkout-session', async (req, res) => {
         planName,
         subscriptionType: 'monthly',
       },
-      // Don't save payment methods
-      payment_intent_data: {
-        setup_future_usage: null,
-      },
+      // Don't include payment_intent_data at all for one-time payments
     });
 
     console.log('✅ Stripe session created successfully');
