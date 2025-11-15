@@ -176,20 +176,23 @@ app.get('/verify-session/:sessionId', async (req, res) => {
   }
 });
 
-// Simple success/cancel pages for testing
+// Payment Success Page - Updated to work with WebView
 app.get('/payment-success', (req, res) => {
-  const { session_id } = req.query;
-  console.log('✅ Payment success page accessed, session:', session_id);
+  const { session_id, userId } = req.query;
+  console.log('✅ Payment success page accessed');
+  console.log('- Session ID:', session_id);
+  console.log('- User ID:', userId);
   
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Payment Successful</title>
+      <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Payment Successful</title>
       <style>
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -200,78 +203,125 @@ app.get('/payment-success', (req, res) => {
         .container {
           background: white;
           padding: 40px;
-          border-radius: 12px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          border-radius: 16px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.1);
           text-align: center;
           max-width: 400px;
+          animation: slideUp 0.5s ease-out;
         }
-        .icon {
-          font-size: 64px;
-          margin-bottom: 20px;
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .checkmark {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          display: block;
+          stroke-width: 3;
+          stroke: #4CAF50;
+          stroke-miterlimit: 10;
+          margin: 0 auto 20px;
+          animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+        }
+        .checkmark-circle {
+          stroke-dasharray: 166;
+          stroke-dashoffset: 166;
+          stroke-width: 3;
+          stroke-miterlimit: 10;
+          stroke: #4CAF50;
+          fill: none;
+          animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .checkmark-check {
+          transform-origin: 50% 50%;
+          stroke-dasharray: 48;
+          stroke-dashoffset: 48;
+          animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        @keyframes stroke {
+          100% { stroke-dashoffset: 0; }
+        }
+        @keyframes scale {
+          0%, 100% { transform: none; }
+          50% { transform: scale3d(1.1, 1.1, 1); }
         }
         h1 {
-          color: #4CAF50;
-          margin: 0 0 10px 0;
+          color: #333;
+          margin: 0 0 10px;
+          font-size: 28px;
         }
         p {
           color: #666;
-          margin: 10px 0;
+          font-size: 16px;
+          margin: 0 0 20px;
         }
-        .session-id {
-          background: #f5f5f5;
-          padding: 10px;
-          border-radius: 6px;
-          font-family: monospace;
-          font-size: 12px;
-          word-break: break-all;
-          margin-top: 20px;
-        }
-        .countdown {
+        .loading {
           color: #999;
           font-size: 14px;
-          margin-top: 10px;
+          margin-top: 20px;
+        }
+        .session-info {
+          background: #f5f5f5;
+          padding: 12px;
+          border-radius: 8px;
+          margin-top: 20px;
+          font-size: 12px;
+          color: #666;
+          font-family: monospace;
+          word-break: break-all;
         }
       </style>
     </head>
     <body>
       <div class="container">
-        <div class="icon">✅</div>
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+          <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
         <h1>Payment Successful!</h1>
-        <p>Your premium subscription is now active.</p>
-        <p class="countdown">Redirecting in <span id="timer">3</span> seconds...</p>
-        ${session_id ? `<div class="session-id">Session: ${session_id}</div>` : ''}
+        <p>Your premium subscription has been activated.</p>
+        <p class="loading">Processing your subscription...</p>
+        ${session_id ? `<div class="session-info">Session: ${session_id}</div>` : ''}
       </div>
       <script>
-        let count = 3;
-        const timer = document.getElementById('timer');
+        console.log('Payment success page loaded');
+        console.log('Session ID: ${session_id}');
         
-        const countdown = setInterval(() => {
-          count--;
-          timer.textContent = count;
-          if (count === 0) {
-            clearInterval(countdown);
-            // Try to redirect to app
-            window.location.href = 'app://payment-success?session_id=${session_id}';
-          }
-        }, 1000);
+        // Wait 2 seconds to show the success animation
+        setTimeout(() => {
+          console.log('Redirecting to about:blank to trigger app handling');
+          // Redirect to about:blank which the WebView will detect
+          window.location.href = 'about:blank';
+        }, 2000);
       </script>
     </body>
     </html>
   `);
 });
 
+// Payment Cancel Page - Updated to work with WebView
 app.get('/payment-cancel', (req, res) => {
+  const { userId } = req.query;
   console.log('❌ Payment cancel page accessed');
+  console.log('- User ID:', userId);
   
   res.send(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Payment Cancelled</title>
+      <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Payment Cancelled</title>
       <style>
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -282,49 +332,79 @@ app.get('/payment-cancel', (req, res) => {
         .container {
           background: white;
           padding: 40px;
-          border-radius: 12px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          border-radius: 16px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.1);
           text-align: center;
           max-width: 400px;
+          animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .icon {
-          font-size: 64px;
-          margin-bottom: 20px;
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 20px;
+          border-radius: 50%;
+          background: #ff9800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 48px;
+          color: white;
+          animation: scale 0.5s ease-out;
+        }
+        @keyframes scale {
+          0% {
+            transform: scale(0);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
         h1 {
-          color: #f5576c;
-          margin: 0 0 10px 0;
+          color: #333;
+          margin: 0 0 10px;
+          font-size: 28px;
         }
         p {
           color: #666;
-          margin: 10px 0;
+          font-size: 16px;
+          margin: 0 0 20px;
         }
-        .countdown {
+        .loading {
           color: #999;
           font-size: 14px;
-          margin-top: 10px;
+          margin-top: 20px;
         }
       </style>
     </head>
     <body>
       <div class="container">
-        <div class="icon">❌</div>
+        <div class="icon">⚠️</div>
         <h1>Payment Cancelled</h1>
-        <p>No charges were made.</p>
-        <p class="countdown">Redirecting in <span id="timer">3</span> seconds...</p>
+        <p>No charges were made to your account.</p>
+        <p class="loading">Returning to app...</p>
       </div>
       <script>
-        let count = 3;
-        const timer = document.getElementById('timer');
+        console.log('Payment cancel page loaded');
         
-        const countdown = setInterval(() => {
-          count--;
-          timer.textContent = count;
-          if (count === 0) {
-            clearInterval(countdown);
-            window.location.href = 'app://payment-cancel';
-          }
-        }, 1000);
+        // Wait 2 seconds to show the message
+        setTimeout(() => {
+          console.log('Redirecting to about:blank to trigger app handling');
+          // Redirect to about:blank which the WebView will detect
+          window.location.href = 'about:blank';
+        }, 2000);
       </script>
     </body>
     </html>
